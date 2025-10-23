@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kerstboom Code</title>
+<style>
+  body {
+    background: radial-gradient(ellipse at center, #001018, #000);
+    color: #FFD966;
+    font-family: 'Courier New', monospace;
+    text-align: center;
+    overflow-x: hidden;
+  }
+
+body::before {
+  content: "";
+  position: absolute;
+  top: 200px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 380px;
+  height: 550px;
+
+  /* 🎄 Volledige, gelijkmatige boomkleur met subtiel verloop */
+  background: linear-gradient(
+    180deg,
+    rgba(0, 140, 70, 1) 30%,   /* bovenkant: helderder groen */
+    rgba(0, 100, 30, 1) 90%  /* onderkant: iets donkerder groen */
+  );
+
+  clip-path: polygon(
+    50% 0%,
+    90% 30%, 70% 30%,
+    100% 60%, 80% 60%,
+    100% 90%, 0 90%,
+    20% 60%, 0 60%,
+    30% 30%, 10% 30%
+  );
+
+  opacity: 1; /* overal even zichtbaar */
+  pointer-events: none;
+  z-index: -1;
+}
+  h1 {
+    margin-top: 20px;
+    letter-spacing: 3px;
+  }
+
+  #board {
+  display: grid;
+  grid-template-columns: repeat(9, 35px);
+  grid-template-rows: repeat(9, 35px);
+  grid-gap: 15px;
+  justify-content: center;
+  margin: 73px auto 0 auto;
+  position: relative;
+  transform: translateX(-3.5px);
+}
+
+.bulb:nth-child(1)  { grid-column: 5; grid-row: 1; }
+
+.bulb:nth-child(2)  { grid-column: 4; 
+                      grid-row: 2; 
+                      position: relative;
+                      top: 20px;   
+                      left: -15px;
+}   
+.bulb:nth-child(3)  { grid-column: 6; 
+                      grid-row: 2; 
+                      position: relative;
+                      top: 20px;   
+                      left: 15px;
+}   
+
+.bulb:nth-child(4)  { grid-column: 2; grid-row: 4; }   
+.bulb:nth-child(5)  { grid-column: 5; grid-row: 4; }
+.bulb:nth-child(6)  { grid-column: 8; grid-row: 4; }
+
+.bulb:nth-child(7)  { grid-column: 2; 
+                      grid-row: 6; 
+                      position: relative;
+                      top: -15px;   
+                      left: 2px;
+}
+.bulb:nth-child(8)  { grid-column: 4; 
+                      grid-row: 6; 
+                      position: relative;
+                      top: -15px;   
+                      left: 0px;
+}   
+.bulb:nth-child(9)  { grid-column: 6; 
+                      grid-row: 6; 
+                      position: relative;
+                      top: -15px;   
+                      left: 0px;
+}
+.bulb:nth-child(10) { grid-column: 8; 
+                      grid-row: 6; 
+                      position: relative;
+                      top: -15px;   
+                      left: -2px;
+}
+
+.bulb:nth-child(11) { grid-column: 1; 
+                      grid-row: 7; 
+                      position: relative;
+                      top: 9px;   
+                      left: 8px;
+}
+.bulb:nth-child(12) { grid-column: 3; 
+                      grid-row: 7; 
+                      position: relative;
+                      top: 7px;   
+                      left: -4px;
+}
+.bulb:nth-child(14) { grid-column: 9; 
+                      grid-row: 7; 
+                      position: relative;
+                      top: 9px;   
+                      left: -4px;
+}
+.bulb:nth-child(13) { grid-column: 7; 
+                      grid-row: 7; 
+                      position: relative;
+                      top: 7px;   
+                      left: 9px;
+}
+
+  svg.bulb {
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+
+  svg.bulb.on .lamp { fill: #FFD966; }
+  svg.bulb.off .lamp { fill: #2b2100; }
+  svg.bulb.error .lamp { fill: #ff4444; }
+
+  svg.bulb.on .glow { opacity: 1; }
+  svg.bulb.off .glow { opacity: 0.1; }
+  svg.bulb.error .glow { opacity: 0.4; }
+
+  #status, #progress {
+    margin: 10px 0;
+    font-size: 14px;
+  }
+  #status, #progress {
+    color: #FFD966;
+  }
+
+  #codeBox {
+    display: none;
+    margin-top: 25px;
+    padding: 10px;
+    border: 1px solid #FFD966;
+    color: #FFD966;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  button {
+    margin-top: 15px;
+    background: none;
+    border: 1px solid #FFD966;
+    color: #FFD966;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background: #002a2a;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-6px); }
+    40%, 80% { transform: translateX(6px); }
+  }
+
+  .shake {
+    animation: shake 0.3s;
+  }
+
+.hidden-text {
+  position: absolute;
+  bottom: -20px;    
+  right: 40px;     
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  color: #FFD966;
+  font-family: 'Courier New', monospace;
+
+}
+  
+  .hidden-text:hover {
+    opacity: 1;
+  }
+</style>
+</head>
+<body>
+
+<h1> klik de goede volgorde van de lampjes </h1>
+<p id="status">Status: wacht op invoer...</p>
+<p id="progress">Voortgang: 0 / 15</p>
+<div id="board"></div>
+
+<div id="codeBox">Code is ergens verstopt in deze website</b></div>
+<button id="resetBtn">Reset</button>
+
+<!-- 🎶 Achtergrondmuziek -->
+<audio id="bg-music" src="sounds/kerstmuziek.mp3" preload="auto" loop></audio>
+
+<!-- 🔔 Geluidseffecten -->
+<audio id="sound-correct" src="sounds/goed_antwoord.mp3" preload="auto"></audio>
+<audio id="sound-error" src="sounds/fout_antwoord.mp3" preload="auto"></audio>
+
+<script>
+/**
+ * ✅ LICHTPATROON INSTELLEN
+ * Gebruik de nummers van de lampjes (1..15)
+ */
+const solution = [6, 2, 9, 14, 7, 1, 12, 4, 10, 13, 3, 5, 8, 11]; // jouw gewenste volgorde
+
+// 🎄 Elementen ophalen
+const board = document.getElementById('board');
+const statusEl = document.getElementById('status');
+const progressEl = document.getElementById('progress');
+const codeBox = document.getElementById('codeBox');
+
+// 🔊 Audio
+const bgMusic = document.getElementById('bg-music');
+const soundCorrect = document.getElementById('sound-correct');
+const soundError = document.getElementById('sound-error');
+
+// Log audio source info for debugging
+console.log('Audio sources:', {
+  bgMusic: bgMusic.src,
+  soundCorrect: soundCorrect.src,
+  soundError: soundError.src
+});
+
+// Add error event listeners for audio elements
+[bgMusic, soundCorrect, soundError].forEach(audio => {
+  audio.addEventListener('error', (e) => {
+    console.error(`Audio failed to load or play: ${audio.id}, src: ${audio.src}`);
+  });
+});
+
+// 🌟 Lampjes genereren
+for (let i = 1; i <= 14; i++) {
+  const bulb = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  bulb.classList.add('bulb', 'off');
+  bulb.setAttribute('data-id', i);
+  bulb.setAttribute('viewBox', '0 0 40 40');
+  bulb.innerHTML = `
+    <defs>
+      <radialGradient id="glowCyan" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#00ffff" stop-opacity="0.8"/>
+        <stop offset="100%" stop-color="#00ffff" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <circle class="glow" cx="20" cy="20" r="18" fill="url(#glowCyan)"></circle>
+    <circle class="lamp" cx="20" cy="20" r="12" />
+    <circle class="ring" cx="20" cy="20" r="13" fill="none" stroke-width="2" stroke="#FFD966" />
+  `;
+  board.appendChild(bulb);
+}
+
+const bulbs = Array.from(document.querySelectorAll('.bulb'));
+let step = 0;
+
+function setState(g, state) {
+  g.classList.remove('off', 'on', 'error');
+  g.classList.add(state);
+}
+
+function turnAllOff() {
+  bulbs.forEach(g => setState(g, 'off'));
+}
+
+function updateProgress() {
+  progressEl.textContent = `Voortgang: ${step} / 14`;
+}
+
+function success() {
+  statusEl.textContent = 'Status: VOLTOOID — lichtpatroon geaccepteerd';
+  codeBox.style.display = 'block';
+}
+
+function fail() {
+  soundError.currentTime = 0;
+  soundError.play().catch(() => {
+    console.warn('Failed to play error sound:', soundError.src);
+  });
+  // Remove or reduce volume dimming to avoid music becoming too quiet
+  // bgMusic.volume = 0.15; // Removed as per instructions
+  setTimeout(() => {
+    // Restore volume only if it was changed, here we keep it as is
+    bgMusic.volume = 0.3;
+  }, 1500);
+  statusEl.textContent = 'Status: fout patroon — alles reset';
+  bulbs.forEach(g => setState(g, 'error'));
+  board.classList.add('shake');
+  setTimeout(() => {
+    board.classList.remove('shake');
+    turnAllOff();
+    step = 0;
+    updateProgress();
+    statusEl.textContent = 'Status: opnieuw proberen…';
+  }, 600);
+}
+
+let musicStarted = false;
+
+function handleClick(e) {
+  const g = e.currentTarget;
+  const idx = Number(g.dataset.id);
+
+  // Start achtergrondmuziek bij eerste klik
+  if (!musicStarted) {
+    musicStarted = true;
+    bgMusic.volume = 0;
+    bgMusic.play().then(() => {
+      console.log('Background music started playing.');
+    }).catch(() => {
+      console.warn('Failed to start background music:', bgMusic.src);
+    });
+    const fade = setInterval(() => {
+      bgMusic.volume = Math.min(bgMusic.volume + 0.02, 0.3);
+      if (bgMusic.volume >= 0.3) clearInterval(fade);
+    }, 200);
+  }
+
+  const expected = solution[step];
+  if (g.classList.contains('on')) return; // voorkomt dubbelklik
+
+  if (idx === expected) {
+    soundCorrect.currentTime = 0;
+    soundCorrect.play().then(() => {
+      console.log('Played correct sound.');
+    }).catch(() => {
+      console.warn('Failed to play correct sound:', soundCorrect.src);
+    });
+    setState(g, 'on');
+    step++;
+    statusEl.textContent = `Status: correct (${step}/${solution.length})`;
+    updateProgress();
+    if (step === solution.length) {
+      success();
+      bulbs.forEach(b => b.classList.add('on'));
+    }
+  } else {
+    fail();
+  }
+}
+
+bulbs.forEach(g => g.addEventListener('click', handleClick));
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  step = 0;
+  turnAllOff();
+  updateProgress();
+  codeBox.style.display = 'none';
+  statusEl.textContent = 'Status: handmatig gereset';
+});
+</script>
+
+<div class="hidden-text">https://github.com/devthedep-commits/reboot/</div>
+
+</body>
+</html>
