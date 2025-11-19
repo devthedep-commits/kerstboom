@@ -1,374 +1,435 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Kerstboom Code</title>
-<style>
-  body {
-    background: radial-gradient(ellipse at center, #001018, #000);
-    color: #FFD966;
-    font-family: 'Courier New', monospace;
-    text-align: center;
-    overflow-x: hidden;
-  }
+    <meta charset="UTF-8">
+    <title>Kerstboom Puzzel - Mystery Mode</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #050510; }
+        
+        /* UI Overlay */
+        #ui-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 20px;
+            border-radius: 12px;
+            pointer-events: none;
+            user-select: none;
+            border: 1px solid #555;
+            width: 260px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
 
-body::before {
-  content: "";
-  position: absolute;
-  top: 200px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 380px;
-  height: 550px;
+        h1 { margin: 0 0 10px 0; font-size: 20px; color: #ffd700; text-shadow: 0 0 10px #d4af37; text-align: center; }
+        p { margin: 5px 0; font-size: 14px; color: #ccc; text-align: center; }
 
-  /* 🎄 Volledige, gelijkmatige boomkleur met subtiel verloop */
-  background: linear-gradient(
-    180deg,
-    rgba(0, 140, 70, 1) 30%,   /* bovenkant: helderder groen */
-    rgba(0, 100, 30, 1) 90%  /* onderkant: iets donkerder groen */
-  );
+        .clue-box {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #555;
+        }
+        
+        .clue-title { font-weight: bold; color: #fff; margin-bottom: 8px; display: block; }
 
-  clip-path: polygon(
-    50% 0%,
-    90% 30%, 70% 30%,
-    100% 60%, 80% 60%,
-    100% 90%, 0 90%,
-    20% 60%, 0 60%,
-    30% 30%, 10% 30%
-  );
+        /* Lijst Styles */
+        .color-list {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            font-size: 14px;
+        }
 
-  opacity: 1; /* overal even zichtbaar */
-  pointer-events: none;
-  z-index: -1;
-}
-  h1 {
-    margin-top: 20px;
-    letter-spacing: 3px;
-  }
+        .list-item {
+            display: flex;
+            align-items: center;
+            background: rgba(255,255,255,0.05);
+            padding: 6px 10px;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
 
-  #board {
-  display: grid;
-  grid-template-columns: repeat(9, 35px);
-  grid-template-rows: repeat(9, 35px);
-  grid-gap: 15px;
-  justify-content: center;
-  margin: 73px auto 0 auto;
-  position: relative;
-  transform: translateX(-3.5px);
-}
+        /* Actieve item highlight */
+        .list-item.active {
+            background: rgba(255, 215, 0, 0.2);
+            border: 1px solid #ffd700;
+        }
 
-.bulb:nth-child(1)  { grid-column: 5; grid-row: 1; }
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+            display: inline-block;
+            background: #333; /* Grijs als het onbekend is */
+            border: 1px solid #555;
+        }
 
-.bulb:nth-child(2)  { grid-column: 4; 
-                      grid-row: 2; 
-                      position: relative;
-                      top: 20px;   
-                      left: -15px;
-}   
-.bulb:nth-child(3)  { grid-column: 6; 
-                      grid-row: 2; 
-                      position: relative;
-                      top: 20px;   
-                      left: 15px;
-}   
+        /* De Popup */
+        #popup {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+            color: #333;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 0 60px rgba(255, 215, 0, 0.8);
+            z-index: 100;
+            min-width: 320px;
+            border: 4px solid #d42426;
+        }
 
-.bulb:nth-child(4)  { grid-column: 2; grid-row: 4; }   
-.bulb:nth-child(5)  { grid-column: 5; grid-row: 4; }
-.bulb:nth-child(6)  { grid-column: 8; grid-row: 4; }
+        #popup h2 { margin-top: 0; color: #2e8b57; font-size: 32px; margin-bottom: 10px;}
+        #popup p { font-size: 18px; color: #555; margin-bottom: 25px; }
+        
+        #popup button {
+            padding: 12px 30px;
+            background: #d42426;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+        #popup button:hover { background: #b01b1d; transform: scale(1.05); }
 
-.bulb:nth-child(7)  { grid-column: 2; 
-                      grid-row: 6; 
-                      position: relative;
-                      top: -15px;   
-                      left: 2px;
-}
-.bulb:nth-child(8)  { grid-column: 4; 
-                      grid-row: 6; 
-                      position: relative;
-                      top: -15px;   
-                      left: 0px;
-}   
-.bulb:nth-child(9)  { grid-column: 6; 
-                      grid-row: 6; 
-                      position: relative;
-                      top: -15px;   
-                      left: 0px;
-}
-.bulb:nth-child(10) { grid-column: 8; 
-                      grid-row: 6; 
-                      position: relative;
-                      top: -15px;   
-                      left: -2px;
-}
+        /* Feedback tekstje */
+        #feedback {
+            position: absolute;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            pointer-events: none;
+            text-shadow: 0 2px 8px black;
+            opacity: 0;
+            transition: opacity 0.3s;
+            background: rgba(0,0,0,0.6);
+            padding: 10px 20px;
+            border-radius: 30px;
+        }
 
-.bulb:nth-child(11) { grid-column: 1; 
-                      grid-row: 7; 
-                      position: relative;
-                      top: 9px;   
-                      left: 8px;
-}
-.bulb:nth-child(12) { grid-column: 3; 
-                      grid-row: 7; 
-                      position: relative;
-                      top: 7px;   
-                      left: -4px;
-}
-.bulb:nth-child(14) { grid-column: 9; 
-                      grid-row: 7; 
-                      position: relative;
-                      top: 9px;   
-                      left: -4px;
-}
-.bulb:nth-child(13) { grid-column: 7; 
-                      grid-row: 7; 
-                      position: relative;
-                      top: 7px;   
-                      left: 9px;
-}
-
-  svg.bulb {
-    width: 40px;
-    height: 40px;
-    cursor: pointer;
-    transition: transform 0.15s;
-  }
-
-  svg.bulb.on .lamp { fill: #FFD966; }
-  svg.bulb.off .lamp { fill: #2b2100; }
-  svg.bulb.error .lamp { fill: #ff4444; }
-
-  svg.bulb.on .glow { opacity: 1; }
-  svg.bulb.off .glow { opacity: 0.1; }
-  svg.bulb.error .glow { opacity: 0.4; }
-
-  #status, #progress {
-    margin: 10px 0;
-    font-size: 14px;
-  }
-  #status, #progress {
-    color: #FFD966;
-  }
-
-  #codeBox {
-    display: none;
-    margin-top: 25px;
-    padding: 10px;
-    border: 1px solid #FFD966;
-    color: #FFD966;
-    width: fit-content;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  button {
-    margin-top: 15px;
-    background: none;
-    border: 1px solid #FFD966;
-    color: #FFD966;
-    padding: 5px 10px;
-    cursor: pointer;
-  }
-
-  button:hover {
-    background: #002a2a;
-  }
-
-  @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    20%, 60% { transform: translateX(-6px); }
-    40%, 80% { transform: translateX(6px); }
-  }
-
-  .shake {
-    animation: shake 0.3s;
-  }
-
-.hidden-text {
-  position: absolute;
-  bottom: -20px;    
-  right: 40px;     
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  color: #FFD966;
-  font-family: 'Courier New', monospace;
-
-}
-  
-  .hidden-text:hover {
-    opacity: 1;
-  }
-</style>
+    </style>
 </head>
 <body>
 
-<h1> klik de goede volgorde van de lampjes </h1>
-<p id="status">Status: wacht op invoer...</p>
-<p id="progress">Voortgang: 0 / 15</p>
-<div id="board"></div>
+    <div id="ui-container">
+        <h1>🎄 Kerstboom Speurtocht</h1>
+        <p>Zoek de lichtjes in de juiste volgorde!</p>
+        <p style="font-size:12px; color:#aaa;">Hint: Begin onderaan...</p>
+        
+        <div class="clue-box">
+            <span class="clue-title">Gevonden Patroon:</span>
+            <div class="color-list" id="patternList">
+                </div>
+        </div>
+    </div>
 
-<div id="codeBox">Code is ergens verstopt in deze website</b></div>
-<button id="resetBtn">Reset</button>
+    <div id="feedback"></div>
 
-<!-- 🎶 Achtergrondmuziek -->
-<audio id="bg-music" src="sounds/kerstmuziek.mp3" preload="auto" loop></audio>
+    <div id="popup">
+        <h2>🌟 GEWONNEN! 🌟</h2>
+        <p>Je hebt het hele patroon ontdekt!</p>
+        <button onclick="resetGame()">Opnieuw Spelen</button>
+    </div>
 
-<!-- 🔔 Geluidseffecten -->
-<audio id="sound-correct" src="sounds/goed_antwoord.mp3" preload="auto"></audio>
-<audio id="sound-error" src="sounds/fout_antwoord.mp3" preload="auto"></audio>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
 
-<script>
-/**
- * ✅ LICHTPATROON INSTELLEN
- * Gebruik de nummers van de lampjes (1..15)
- */
-const solution = [6, 2, 9, 14, 7, 1, 12, 4, 10, 13, 3, 5, 8, 11]; // jouw gewenste volgorde
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-// 🎄 Elementen ophalen
-const board = document.getElementById('board');
-const statusEl = document.getElementById('status');
-const progressEl = document.getElementById('progress');
-const codeBox = document.getElementById('codeBox');
+        // --- 1. SETUP ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x020205);
+        scene.fog = new THREE.Fog(0x020205, 15, 60);
 
-// 🔊 Audio
-const bgMusic = document.getElementById('bg-music');
-const soundCorrect = document.getElementById('sound-correct');
-const soundError = document.getElementById('sound-error');
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 6, 18); // Ver uitgezoomd
 
-// Log audio source info for debugging
-console.log('Audio sources:', {
-  bgMusic: bgMusic.src,
-  soundCorrect: soundCorrect.src,
-  soundError: soundError.src
-});
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
 
-// Add error event listeners for audio elements
-[bgMusic, soundCorrect, soundError].forEach(audio => {
-  audio.addEventListener('error', (e) => {
-    console.error(`Audio failed to load or play: ${audio.id}, src: ${audio.src}`);
-  });
-});
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.minDistance = 5;
+        controls.maxDistance = 30;
+        controls.maxPolarAngle = Math.PI / 2 - 0.05;
 
-// 🌟 Lampjes genereren
-for (let i = 1; i <= 14; i++) {
-  const bulb = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  bulb.classList.add('bulb', 'off');
-  bulb.setAttribute('data-id', i);
-  bulb.setAttribute('viewBox', '0 0 40 40');
-  bulb.innerHTML = `
-    <defs>
-      <radialGradient id="glowCyan" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stop-color="#00ffff" stop-opacity="0.8"/>
-        <stop offset="100%" stop-color="#00ffff" stop-opacity="0"/>
-      </radialGradient>
-    </defs>
-    <circle class="glow" cx="20" cy="20" r="18" fill="url(#glowCyan)"></circle>
-    <circle class="lamp" cx="20" cy="20" r="12" />
-    <circle class="ring" cx="20" cy="20" r="13" fill="none" stroke-width="2" stroke="#FFD966" />
-  `;
-  board.appendChild(bulb);
-}
+        // --- 2. LICHT ---
+        const ambientLight = new THREE.AmbientLight(0x404040, 2.5);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        dirLight.position.set(8, 12, 8);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
 
-const bulbs = Array.from(document.querySelectorAll('.bulb'));
-let step = 0;
+        // --- 3. DE BOOM ---
+        const treeGroup = new THREE.Group();
+        scene.add(treeGroup);
 
-function setState(g, state) {
-  g.classList.remove('off', 'on', 'error');
-  g.classList.add(state);
-}
+        // Stam
+        const trunk = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.6, 0.8, 2.5, 8),
+            new THREE.MeshStandardMaterial({ color: 0x4a3728 })
+        );
+        trunk.position.y = 1.25;
+        trunk.castShadow = true;
+        treeGroup.add(trunk);
 
-function turnAllOff() {
-  bulbs.forEach(g => setState(g, 'off'));
-}
+        const leafMat = new THREE.MeshStandardMaterial({ color: 0x0f5f13, roughness: 0.8, flatShading: true });
 
-function updateProgress() {
-  progressEl.textContent = `Voortgang: ${step} / 14`;
-}
+        function createLayer(y, radius, height) {
+            const mesh = new THREE.Mesh(new THREE.ConeGeometry(radius, height, 10), leafMat);
+            mesh.position.y = y;
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            return mesh;
+        }
+        treeGroup.add(createLayer(3, 3.5, 4));   
+        treeGroup.add(createLayer(5, 2.5, 3.5)); 
+        treeGroup.add(createLayer(6.8, 1.5, 2.5));
 
-function success() {
-  statusEl.textContent = 'Status: VOLTOOID — lichtpatroon geaccepteerd';
-  codeBox.style.display = 'block';
-}
+        // Piek
+        const star = new THREE.Mesh(
+            new THREE.OctahedronGeometry(0.5, 0),
+            new THREE.MeshBasicMaterial({ color: 0xffd700 })
+        );
+        star.position.y = 8.3;
+        treeGroup.add(star);
 
-function fail() {
-  soundError.currentTime = 0;
-  soundError.play().catch(() => {
-    console.warn('Failed to play error sound:', soundError.src);
-  });
-  // Remove or reduce volume dimming to avoid music becoming too quiet
-  // bgMusic.volume = 0.15; // Removed as per instructions
-  setTimeout(() => {
-    // Restore volume only if it was changed, here we keep it as is
-    bgMusic.volume = 0.3;
-  }, 1500);
-  statusEl.textContent = 'Status: fout patroon — alles reset';
-  bulbs.forEach(g => setState(g, 'error'));
-  board.classList.add('shake');
-  setTimeout(() => {
-    board.classList.remove('shake');
-    turnAllOff();
-    step = 0;
-    updateProgress();
-    statusEl.textContent = 'Status: opnieuw proberen…';
-  }, 600);
-}
+        // --- 4. DE LICHTJES (Configuratie) ---
+        // De posities die goed zichtbaar zijn
+        const lightsConfig = [
+            { id: 'white',   name: 'Wit',     hex: '#ffffff', color: 0xffffff, pos: [-2.5, 2.2, 1.5] },  
+            { id: 'red',     name: 'Rood',    hex: '#ff0000', color: 0xff0000, pos: [2.2, 2.5, 1.8] },   
+            { id: 'blue',    name: 'Blauw',   hex: '#0000ff', color: 0x2222ff, pos: [0, 2.0, -3.0] },    
+            { id: 'yellow',  name: 'Geel',    hex: '#ffff00', color: 0xffff00, pos: [-1.8, 3.2, -1.8] }, 
+            { id: 'cyan',    name: 'Cyaan',   hex: '#00ffff', color: 0x00ffff, pos: [1.8, 3.8, -1.2] },  
+            { id: 'orange',  name: 'Oranje',  hex: '#ffa500', color: 0xffa500, pos: [1.8, 4.2, 1.5] },   
+            { id: 'green',   name: 'Groen',   hex: '#32cd32', color: 0x32cd32, pos: [-1.9, 4.5, 0.8] },  
+            { id: 'purple',  name: 'Paars',   hex: '#800080', color: 0x800080, pos: [0, 5.5, -1.8] },    
+            { id: 'pink',    name: 'Roze',    hex: '#ff69b4', color: 0xff69b4, pos: [-1.2, 6.0, 1.0] },  
+            { id: 'magenta', name: 'Magenta', hex: '#ff00ff', color: 0xff00ff, pos: [0.8, 6.5, 0.8] }    
+        ];
 
-let musicStarted = false;
+        // Correcte volgorde
+        const correctOrderIds = ['white', 'red', 'blue', 'yellow', 'cyan', 'orange', 'green', 'purple', 'pink', 'magenta'];
+        
+        const interactables = [];
+        let currentStep = 0;
 
-function handleClick(e) {
-  const g = e.currentTarget;
-  const idx = Number(g.dataset.id);
+        // UI Opbouwen (Vraagtekens)
+        const listContainer = document.getElementById('patternList');
+        
+        function initUI() {
+            listContainer.innerHTML = '';
+            correctOrderIds.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'list-item';
+                div.id = `clue-${index}`;
+                // Initieel: Vraagtekens en grijze dot
+                div.innerHTML = `<span class="dot"></span> ${index + 1}. ???`;
+                listContainer.appendChild(div);
+            });
+            // Highlight de eerste
+            document.getElementById('clue-0').classList.add('active');
+        }
+        initUI();
 
-  // Start achtergrondmuziek bij eerste klik
-  if (!musicStarted) {
-    musicStarted = true;
-    bgMusic.volume = 0;
-    bgMusic.play().then(() => {
-      console.log('Background music started playing.');
-    }).catch(() => {
-      console.warn('Failed to start background music:', bgMusic.src);
-    });
-    const fade = setInterval(() => {
-      bgMusic.volume = Math.min(bgMusic.volume + 0.02, 0.3);
-      if (bgMusic.volume >= 0.3) clearInterval(fade);
-    }, 200);
-  }
+        // 3D objecten maken
+        lightsConfig.forEach(cfg => {
+            const geo = new THREE.SphereGeometry(0.25, 16, 16);
+            const mat = new THREE.MeshStandardMaterial({ 
+                color: cfg.color, 
+                emissive: cfg.color, 
+                emissiveIntensity: 0.6 
+            });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(...cfg.pos);
+            mesh.userData = { id: cfg.id, name: cfg.name, hex: cfg.hex };
+            
+            treeGroup.add(mesh);
+            interactables.push(mesh);
 
-  const expected = solution[step];
-  if (g.classList.contains('on')) return; // voorkomt dubbelklik
+            const pl = new THREE.PointLight(cfg.color, 1.8, 4);
+            pl.position.set(...cfg.pos);
+            treeGroup.add(pl);
+        });
 
-  if (idx === expected) {
-    soundCorrect.currentTime = 0;
-    soundCorrect.play().then(() => {
-      console.log('Played correct sound.');
-    }).catch(() => {
-      console.warn('Failed to play correct sound:', soundCorrect.src);
-    });
-    setState(g, 'on');
-    step++;
-    statusEl.textContent = `Status: correct (${step}/${solution.length})`;
-    updateProgress();
-    if (step === solution.length) {
-      success();
-      bulbs.forEach(b => b.classList.add('on'));
-    }
-  } else {
-    fail();
-  }
-}
+        // Sneeuw
+        const snowGeo = new THREE.BufferGeometry();
+        const snowPos = new Float32Array(1500 * 3);
+        for(let i=0; i<1500*3; i++) {
+            snowPos[i] = (Math.random()-0.5)*60;
+            if(i%3===1) snowPos[i] = Math.random()*40;
+        }
+        snowGeo.setAttribute('position', new THREE.BufferAttribute(snowPos, 3));
+        const snowMesh = new THREE.Points(snowGeo, new THREE.PointsMaterial({color: 0xffffff, size: 0.15, transparent: true, opacity: 0.8}));
+        scene.add(snowMesh);
 
-bulbs.forEach(g => g.addEventListener('click', handleClick));
+        // --- 5. INTERACTIE ---
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
 
-document.getElementById('resetBtn').addEventListener('click', () => {
-  step = 0;
-  turnAllOff();
-  updateProgress();
-  codeBox.style.display = 'none';
-  statusEl.textContent = 'Status: handmatig gereset';
-});
-</script>
+        window.addEventListener('click', (e) => {
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
-<div class="hidden-text">https://devthedep-commits.github.io/reboot/</div>
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(interactables);
 
+            if(intersects.length > 0) {
+                const obj = intersects[0].object;
+                checkPattern(obj);
+            }
+        });
+
+        function checkPattern(mesh) {
+            // Als we al klaar zijn, niets doen
+            if(currentStep >= correctOrderIds.length) return;
+
+            const clickedId = mesh.userData.id;
+            const targetId = correctOrderIds[currentStep];
+
+            // Animatie
+            pulse(mesh);
+
+            if(clickedId === targetId) {
+                // --- GOED ---
+                revealClue(currentStep, mesh.userData);
+                
+                // Maak het lichtje fel (blijft aan)
+                mesh.material.emissiveIntensity = 3.0;
+
+                showFeedback(`Ja! Dat is ${mesh.userData.name}`, false);
+                
+                // Stap verhogen
+                currentStep++;
+
+                // Highlight volgende regel in UI (als die er is)
+                if(currentStep < correctOrderIds.length) {
+                    document.querySelectorAll('.list-item').forEach(el => el.classList.remove('active'));
+                    document.getElementById(`clue-${currentStep}`).classList.add('active');
+                }
+
+                // Check Winst
+                if(currentStep === correctOrderIds.length) {
+                    setTimeout(() => {
+                        document.getElementById('popup').style.display = 'block';
+                        fireworks();
+                    }, 500);
+                }
+
+            } else {
+                // --- FOUT ---
+                // We kijken of de speler op een lampje klikt dat AL gevonden is
+                // (Checken of index van clickedId < currentStep)
+                const alreadyFound = correctOrderIds.indexOf(clickedId) < currentStep && correctOrderIds.indexOf(clickedId) !== -1;
+                
+                if (alreadyFound) {
+                    showFeedback("Die heb je al gevonden!", true);
+                } else {
+                    showFeedback("Fout! Zoek een ander lampje.", true);
+                    // We resetten currentStep NIET. De voortgang blijft behouden.
+                }
+            }
+        }
+
+        function revealClue(index, data) {
+            const el = document.getElementById(`clue-${index}`);
+            // Verander vraagtekens in Naam + Juiste Kleur bolletje
+            el.innerHTML = `<span class="dot" style="background:${data.hex}; border-color:#fff; box-shadow:0 0 5px ${data.hex}"></span> ${index + 1}. ${data.name}`;
+            el.style.fontWeight = "bold";
+            el.style.color = "#fff";
+        }
+
+        function pulse(mesh) {
+            const oldColor = mesh.material.color.getHex();
+            mesh.material.color.setHex(0xffffff);
+            setTimeout(() => {
+                mesh.material.color.setHex(oldColor);
+            }, 100);
+        }
+
+        function showFeedback(msg, isError) {
+            const el = document.getElementById('feedback');
+            el.innerText = msg;
+            el.style.color = isError ? '#ff6666' : '#66ff66';
+            el.style.opacity = 1;
+            setTimeout(() => { el.style.opacity = 0; }, 2000);
+        }
+
+        window.resetGame = function() {
+            document.getElementById('popup').style.display = 'none';
+            currentStep = 0;
+            initUI(); // Reset de lijst naar vraagtekens
+            
+            // Reset alle lampjes naar normaal
+            interactables.forEach(mesh => {
+                mesh.material.emissiveIntensity = 0.6;
+            });
+            
+            showFeedback("Nieuw spel gestart!", false);
+        };
+
+        function fireworks() {
+            let count = 0;
+            const interval = setInterval(() => {
+                scene.background = new THREE.Color(Math.random() * 0xffffff);
+                count++;
+                if(count > 12) {
+                    clearInterval(interval);
+                    scene.background = new THREE.Color(0x020205);
+                }
+            }, 150);
+        }
+
+        // --- LOOP ---
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+
+            const p = snowMesh.geometry.attributes.position.array;
+            for(let i=1; i<p.length; i+=3) {
+                p[i] -= 0.05;
+                if(p[i] < 0) p[i] = 40;
+            }
+            snowMesh.geometry.attributes.position.needsUpdate = true;
+
+            star.rotation.y -= 0.02;
+            treeGroup.rotation.y += 0.001;
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth/window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+    </script>
 </body>
 </html>
