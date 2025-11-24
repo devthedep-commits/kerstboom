@@ -2,433 +2,553 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>Kerstboom Puzzel - Mystery Mode</title>
+    <title>FROST: Arcade Final Logic Fix</title>
     <style>
-        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #050510; }
+        @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Orbitron:wght@400;900&family=Special+Elite&family=Permanent+Marker&display=swap');
+
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Courier Prime', monospace; user-select: none; }
         
-        /* UI Overlay */
-        #ui-container {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: white;
-            background: rgba(0, 0, 0, 0.85);
-            padding: 20px;
-            border-radius: 12px;
-            pointer-events: none;
-            user-select: none;
-            border: 1px solid #555;
-            width: 260px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        #hud { 
+            position: absolute; top: 20px; left: 20px; color: #0ff; z-index: 10; pointer-events: none; 
+            text-shadow: 0 0 5px #0ff; 
         }
-
-        h1 { margin: 0 0 10px 0; font-size: 20px; color: #ffd700; text-shadow: 0 0 10px #d4af37; text-align: center; }
-        p { margin: 5px 0; font-size: 14px; color: #ccc; text-align: center; }
-
-        .clue-box {
-            margin-top: 15px;
-            padding-top: 10px;
-            border-top: 1px solid #555;
-        }
+        h1 { margin: 0; font-family: 'Orbitron', sans-serif; letter-spacing: 2px; }
         
-        .clue-title { font-weight: bold; color: #fff; margin-bottom: 8px; display: block; }
-
-        /* Lijst Styles */
-        .color-list {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            font-size: 14px;
+        #center-msg {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 60px; color: white; font-weight: 900; text-align: center;
+            text-shadow: 0 0 30px rgba(0,255,255,1); opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 20;
+            width: 100%;
         }
 
-        .list-item {
-            display: flex;
-            align-items: center;
-            background: rgba(255,255,255,0.05);
-            padding: 6px 10px;
-            border-radius: 4px;
-            transition: background 0.3s;
+        #room-ui {
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 100;
+            justify-content: center; align-items: center; pointer-events: auto;
         }
 
-        /* Actieve item highlight */
-        .list-item.active {
-            background: rgba(255, 215, 0, 0.2);
-            border: 1px solid #ffd700;
+        .puzzle-container {
+            width: 900px; height: 650px; background: #111; border: 2px solid #444;
+            position: relative; padding: 20px; box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            display: none; flex-direction: column; overflow: hidden;
         }
 
-        .dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin-right: 10px;
-            display: inline-block;
-            background: #333; /* Grijs als het onbekend is */
-            border: 1px solid #555;
+        .full-screen-image {
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-size: cover; background-position: center; z-index: 150;
+            flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 50px;
+        }
+        .image-caption {
+            background: rgba(0,0,0,0.8); color: white; padding: 20px; border-top: 2px solid red;
+            font-size: 24px; max-width: 80%; text-align: center; margin-bottom: 20px;
         }
 
-        /* De Popup */
-        #popup {
-            display: none;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
-            color: #333;
-            padding: 40px;
-            border-radius: 20px;
-            text-align: center;
-            box-shadow: 0 0 60px rgba(255, 215, 0, 0.8);
-            z-index: 100;
-            min-width: 320px;
-            border: 4px solid #d42426;
+        /* KRANT MODAL */
+        #newspaper-modal {
+            display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-2deg);
+            width: 700px; height: 850px; background: #f0e6d2; color: #111; 
+            font-family: 'Special Elite', cursive; padding: 40px; 
+            box-shadow: 0 0 100px rgba(0,0,0,1); z-index: 200; text-align: left;
+            overflow-y: auto;
         }
-
-        #popup h2 { margin-top: 0; color: #2e8b57; font-size: 32px; margin-bottom: 10px;}
-        #popup p { font-size: 18px; color: #555; margin-bottom: 25px; }
+        .paper-head { font-size: 56px; border-bottom: 3px double black; margin-bottom: 10px; text-align: center; font-weight: bold; line-height: 1; }
+        .paper-meta { border-bottom: 1px solid black; margin-bottom: 20px; display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; }
+        .paper-headline { font-size: 32px; font-weight: bold; margin-bottom: 15px; line-height: 1.1; }
+        .paper-img { width: 100%; height: 220px; background: #333; margin-bottom: 20px; background-size: cover; background-position: center; border: 1px solid black; filter: grayscale(100%) contrast(1.2); }
+        .paper-body { column-count: 2; column-gap: 30px; font-size: 13px; line-height: 1.4; text-align: justify; margin-bottom: 30px; }
+        .paper-body p { margin-bottom: 15px; }
+        .paper-body strong { text-decoration: underline; }
         
-        #popup button {
-            padding: 12px 30px;
-            background: #d42426;
-            color: white;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            font-size: 18px;
-            font-weight: bold;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-            transition: transform 0.1s;
+        .close-paper { 
+            display: block; margin: 0 auto; font-family: 'Special Elite', cursive; 
+            padding: 15px 30px; background: #b30000; color: white; border: 2px solid black; 
+            cursor: pointer; font-size: 20px; font-weight: bold; transform: rotate(-1deg);
+            box-shadow: 3px 3px 5px rgba(0,0,0,0.5); transition: transform 0.2s;
         }
-        #popup button:hover { background: #b01b1d; transform: scale(1.05); }
+        .close-paper:hover { transform: scale(1.05) rotate(0deg); background: #d00; }
 
-        /* Feedback tekstje */
-        #feedback {
-            position: absolute;
-            bottom: 10%;
-            left: 50%;
-            transform: translateX(-50%);
-            text-align: center;
-            color: white;
-            font-size: 24px;
-            font-weight: bold;
-            pointer-events: none;
-            text-shadow: 0 2px 8px black;
-            opacity: 0;
-            transition: opacity 0.3s;
-            background: rgba(0,0,0,0.6);
-            padding: 10px 20px;
-            border-radius: 30px;
+        /* STYLES */
+        #puz-r1 { font-family: 'Courier Prime', monospace; color: #0f0; background: #000; border: 2px solid #0f0; }
+        .browser-bar { background: #003300; padding: 10px; border-bottom: 1px solid #0f0; display: flex; gap: 10px; }
+        .url-bar { background: black; border: 1px solid #0f0; color: #0f0; flex-grow: 1; padding: 5px; font-size: 14px; }
+        .glitch-btn { background: red; color: white; border: none; padding: 10px; margin: 5px; cursor: pointer; font-family: 'Orbitron'; }
+
+        #puz-r2-interrogation { background: #1a1a1a; border: 4px solid #444; }
+        .interrogation-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-top: 30px;}
+        .suspect-card { background: #222; color: #fff; border-radius: 4px; cursor: pointer; transition: 0.2s; border: 2px solid #444; overflow: hidden; display: flex; flex-direction: column;}
+        .suspect-card:hover { transform: translateY(-5px); border-color: #fff; }
+        .suspect-card.selected { border-color: #d00; box-shadow: 0 0 15px #d00; }
+        .mugshot { width: 100%; height: 150px; background: #000; background-size: cover; background-position: top center; }
+        .suspect-info { padding: 10px; font-size: 12px; }
+
+        #puz-r4 { background: #eee; color: #111; border: 4px solid white; text-align: center; font-family: sans-serif; }
+        .core-stage { display: none; height: 100%; flex-direction: column; justify-content: center; align-items: center; }
+        .core-stage.active { display: flex; }
+        .core-btn { padding: 15px 40px; background: black; color: white; border: none; font-size: 18px; cursor: pointer; margin: 5px; }
+
+        .hud-btn { 
+            position: absolute; top: 20px; right: 20px;
+            background: rgba(0,0,0,0.5); border: 1px solid #fff; color: #fff; 
+            padding: 10px 20px; cursor: pointer; text-transform: uppercase; z-index: 1000;
+            display: none; 
         }
+        .hud-btn:hover { background: white; color: black; }
+
+        #finale-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 4s; z-index: 2000; }
+        #finale-text { font-size: 80px; font-weight: 900; letter-spacing: 10px; color: black; }
 
     </style>
 </head>
 <body>
 
-    <div id="ui-container">
-        <h1>🎄 Kerstboom Speurtocht</h1>
-        <p>Zoek de lichtjes in de juiste volgorde!</p>
-        <p style="font-size:12px; color:#aaa;">Hint: Begin onderaan...</p>
-        
-        <div class="clue-box">
-            <span class="clue-title">Gevonden Patroon:</span>
-            <div class="color-list" id="patternList">
+    <div id="hud">
+        <h1>FROST ARCHIVE</h1>
+        <div id="status">STATUS: SYSTEM LOCKED</div>
+    </div>
+
+    <div id="center-msg"></div>
+
+    <button id="exit-room-btn" class="hud-btn" onclick="exitRoom()">Verlaat Kamer</button>
+
+    <div id="newspaper-modal">
+        <div class="paper-head">THE NORTH POLE TIMES</div>
+        <div class="paper-meta">
+            <span>24 DEC 2024</span>
+            <span>VOL. 884</span>
+            <span>PRICE: 1 COOKIE</span>
+        </div>
+        <div class="paper-headline">SABOTAGE IN SECTOR 7: PRODUCTIE STILGELEGD NA TRAGEDIE</div>
+        <div class="paper-img" style="background-image: url('fabriek.png');"></div>
+        <div class="paper-body">
+            <p><strong>NOORDPOOL —</strong> De speelgoedproductie is vannacht volledig tot stilstand gekomen na een schokkend incident in Sector 7. Elf "Pipper Gearwhistle", een veteraan in de assemblage-afdeling, is vanochtend levenloos aangetroffen onder de beruchte "Hydra-Press 3000".</p>
+            <p>Hoewel de autoriteiten aanvankelijk dachten aan een ongeval, wijst forensisch bewijs in een andere richting. De machine was uitgeschakeld voor onderhoud, maar logboeken tonen aan dat deze handmatig werd herstart om 03:42 uur.</p>
+            <p>Een anonieme bron binnen de beveiliging meldt: "Dit was geen storing. Iemand heeft die knop ingedrukt." Opvallend detail: op de bedieningshendel werden sporen gevonden van een vreemd mengsel: <strong>zwarte machine-olie vermengd met ijskristallen</strong>.</p>
+            <p>De politie heeft vijf verdachten in beeld die rond dat tijdstip in de fabriek waren. De fabriek blijft gesloten tot de dader is gevonden.</p>
+        </div>
+        <button class="close-paper" onclick="closeNewspaper()">GA NAAR PLAATS DELICT ></button>
+    </div>
+
+    <div id="crime-scene" class="full-screen-image" style="background-image: url('shredder.png');">
+        <div class="image-caption">
+            PLAATS DELICT: SECTOR 7<br>
+            <span style="font-size: 16px; color: #ccc;">BEWIJS VERZAMELD: OLIE & IJS</span>
+        </div>
+        <button class="close-paper" style="position: static; font-size: 24px;" onclick="goToInterrogation()">START VERHOOR</button>
+    </div>
+
+    <div id="room-ui">
+        <div id="puz-r1" class="puzzle-container">
+            <div class="browser-bar">
+                <div style="color:red">●</div><div style="color:yellow">●</div><div style="color:green">●</div>
+                <div class="url-bar">hxxps://core.frost/mem?node=%47%6c%61%63%69%65%72</div>
+            </div>
+            <div style="padding: 20px;">
+                <h1 style="font-size: 60px;">404 ERROR</h1>
+                <p>DECODE URL NODE TO PROCEED.</p>
+                <input type="text" id="r1-input" placeholder="PASSWORD" style="background:black; border:1px solid #0f0; color:#0f0; padding:10px; width: 60%;">
+                <button class="glitch-btn" onclick="checkR1Input()">EXECUTE</button>
+                <div id="r1-phase2" style="display:none; margin-top:20px;"><div id="r1-buttons"></div></div>
+            </div>
+        </div>
+
+        <div id="puz-r2-interrogation" class="puzzle-container">
+            <h1 style="color: white; border-bottom: 1px solid #555; padding-bottom: 10px; margin-top:0;">VERHOOR: ELVEN SQUAD</h1>
+            <p style="color: #aaa;">ZOEK DE DADER: <strong>OLIE & IJS AAN HANDEN</strong></p>
+            <div class="interrogation-grid" id="suspects-grid"></div>
+            <div style="margin-top: 20px; text-align: center;">
+                <button style="background: #d00; color: white; padding: 15px 30px; border:none; cursor:pointer; font-weight:bold; font-size: 16px;" onclick="accuseSuspect()">ARRESTEER VERDACHTE</button>
+            </div>
+        </div>
+
+        <div id="puz-r4" class="puzzle-container">
+            <div id="core-s1" class="core-stage active">
+                <h2>BEELD</h2><p>Volgorde van herinneringen?</p>
+                <button class="core-btn" onclick="checkCore1(2)">Brief -> Kerk -> Geluid</button>
+                <button class="core-btn" onclick="checkCore1(1)">Boom -> Kerk -> Ijs</button>
+            </div>
+            <div id="core-s2" class="core-stage">
+                <h2>GELUID</h2><p>Wat moest je decoderen?</p>
+                <input type="text" id="c2-in" style="font-size:20px; padding:10px;"><button class="core-btn" onclick="checkCore2()">OK</button>
+            </div>
+            <div id="core-s3" class="core-stage">
+                <h2>LICHT</h2><p>Welke 3 lampjes zag je alseerst?</p>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:10px; margin-top:10px;">
+                    <button class="core-btn" onclick="checkCore3(1)">Rood -> Groen -> Geel</button>
+                    <button class="core-btn" onclick="checkCore3(2)">Wit -> Rood -> Blauw</button>
+                    <button class="core-btn" onclick="checkCore3(3)">Blauw -> Wit -> Roze</button>
                 </div>
+            </div>
+            <div id="core-s4" class="core-stage">
+                <h2>BEELD</h2><p>Welke 3 beelden zag je alseerst?</p>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:10px; margin-top:10px;">
+                    <button class="core-btn" onclick="checkCore4(1)">Tafel -> Ijs -> Brief</button>
+                    <button class="core-btn" onclick="checkCore4(2)">Slee -> Boom -> Tafel</button>
+                    <button class="core-btn" onclick="checkCore4(3)">Boom -> Slee -> Sneeuwpop</button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div id="feedback"></div>
-
-    <div id="popup">
-        <h2>🌟 GEWONNEN! 🌟</h2>
-        <p>Je hebt het hele patroon ontdekt!</p>
-        <button onclick="resetGame()">Opnieuw Spelen</button>
-    </div>
+    <div id="finale-screen"><div id="finale-text">AWAKE</div></div>
 
     <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-            }
-        }
+        { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
     </script>
 
     <script type="module">
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-        // --- 1. SETUP ---
+        const POS = {
+            hub: new THREE.Vector3(0, 6, 18),
+            r1: new THREE.Vector3(1000, 0, 0),
+            r2: new THREE.Vector3(-1000, 5, 0),
+            r3: new THREE.Vector3(0, 0, 1000),
+            r4: new THREE.Vector3(0, 1000, 0)
+        };
+
+        let gameState = 'tree'; 
+        let completed = { tree: false, r1: false, r2: false, r3: false, r4: false };
+
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x020205);
-        scene.fog = new THREE.Fog(0x020205, 15, 60);
-
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 6, 18); // Ver uitgezoomd
-
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 4000);
+        camera.position.copy(POS.hub);
+        
+        const renderer = new THREE.WebGLRenderer({antialias:true});
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true;
         document.body.appendChild(renderer.domElement);
 
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
-        controls.minDistance = 5;
-        controls.maxDistance = 30;
-        controls.maxPolarAngle = Math.PI / 2 - 0.05;
 
-        // --- 2. LICHT ---
-        const ambientLight = new THREE.AmbientLight(0x404040, 2.5);
-        scene.add(ambientLight);
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
-        dirLight.position.set(8, 12, 8);
-        dirLight.castShadow = true;
-        scene.add(dirLight);
-
-        // --- 3. DE BOOM ---
-        const treeGroup = new THREE.Group();
-        scene.add(treeGroup);
-
-        // Stam
-        const trunk = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.6, 0.8, 2.5, 8),
-            new THREE.MeshStandardMaterial({ color: 0x4a3728 })
-        );
-        trunk.position.y = 1.25;
-        trunk.castShadow = true;
-        treeGroup.add(trunk);
-
-        const leafMat = new THREE.MeshStandardMaterial({ color: 0x0f5f13, roughness: 0.8, flatShading: true });
-
-        function createLayer(y, radius, height) {
-            const mesh = new THREE.Mesh(new THREE.ConeGeometry(radius, height, 10), leafMat);
-            mesh.position.y = y;
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-            return mesh;
-        }
-        treeGroup.add(createLayer(3, 3.5, 4));   
-        treeGroup.add(createLayer(5, 2.5, 3.5)); 
-        treeGroup.add(createLayer(6.8, 1.5, 2.5));
-
-        // Piek
-        const star = new THREE.Mesh(
-            new THREE.OctahedronGeometry(0.5, 0),
-            new THREE.MeshBasicMaterial({ color: 0xffd700 })
-        );
-        star.position.y = 8.3;
-        treeGroup.add(star);
-
-        // --- 4. DE LICHTJES (Configuratie) ---
-        // De posities die goed zichtbaar zijn
-        const lightsConfig = [
-            { id: 'white',   name: 'Wit',     hex: '#ffffff', color: 0xffffff, pos: [-2.5, 2.2, 1.5] },  
-            { id: 'red',     name: 'Rood',    hex: '#ff0000', color: 0xff0000, pos: [2.2, 2.5, 1.8] },   
-            { id: 'blue',    name: 'Blauw',   hex: '#0000ff', color: 0x2222ff, pos: [0, 2.0, -3.0] },    
-            { id: 'yellow',  name: 'Geel',    hex: '#ffff00', color: 0xffff00, pos: [-1.8, 3.2, -1.8] }, 
-            { id: 'cyan',    name: 'Cyaan',   hex: '#00ffff', color: 0x00ffff, pos: [1.8, 3.8, -1.2] },  
-            { id: 'orange',  name: 'Oranje',  hex: '#ffa500', color: 0xffa500, pos: [1.8, 4.2, 1.5] },   
-            { id: 'green',   name: 'Groen',   hex: '#32cd32', color: 0x32cd32, pos: [-1.9, 4.5, 0.8] },  
-            { id: 'purple',  name: 'Paars',   hex: '#800080', color: 0x800080, pos: [0, 5.5, -1.8] },    
-            { id: 'pink',    name: 'Roze',    hex: '#ff69b4', color: 0xff69b4, pos: [-1.2, 6.0, 1.0] },  
-            { id: 'magenta', name: 'Magenta', hex: '#ff00ff', color: 0xff00ff, pos: [0.8, 6.5, 0.8] }    
-        ];
-
-        // Correcte volgorde
-        const correctOrderIds = ['white', 'red', 'blue', 'yellow', 'cyan', 'orange', 'green', 'purple', 'pink', 'magenta'];
-        
-        const interactables = [];
-        let currentStep = 0;
-
-        // UI Opbouwen (Vraagtekens)
-        const listContainer = document.getElementById('patternList');
-        
-        function initUI() {
-            listContainer.innerHTML = '';
-            correctOrderIds.forEach((item, index) => {
-                const div = document.createElement('div');
-                div.className = 'list-item';
-                div.id = `clue-${index}`;
-                // Initieel: Vraagtekens en grijze dot
-                div.innerHTML = `<span class="dot"></span> ${index + 1}. ???`;
-                listContainer.appendChild(div);
-            });
-            // Highlight de eerste
-            document.getElementById('clue-0').classList.add('active');
-        }
-        initUI();
-
-        // 3D objecten maken
-        lightsConfig.forEach(cfg => {
-            const geo = new THREE.SphereGeometry(0.25, 16, 16);
-            const mat = new THREE.MeshStandardMaterial({ 
-                color: cfg.color, 
-                emissive: cfg.color, 
-                emissiveIntensity: 0.6 
-            });
-            const mesh = new THREE.Mesh(geo, mat);
-            mesh.position.set(...cfg.pos);
-            mesh.userData = { id: cfg.id, name: cfg.name, hex: cfg.hex };
-            
-            treeGroup.add(mesh);
-            interactables.push(mesh);
-
-            const pl = new THREE.PointLight(cfg.color, 1.8, 4);
-            pl.position.set(...cfg.pos);
-            treeGroup.add(pl);
-        });
-
-        // Sneeuw
-        const snowGeo = new THREE.BufferGeometry();
-        const snowPos = new Float32Array(1500 * 3);
-        for(let i=0; i<1500*3; i++) {
-            snowPos[i] = (Math.random()-0.5)*60;
-            if(i%3===1) snowPos[i] = Math.random()*40;
-        }
-        snowGeo.setAttribute('position', new THREE.BufferAttribute(snowPos, 3));
-        const snowMesh = new THREE.Points(snowGeo, new THREE.PointsMaterial({color: 0xffffff, size: 0.15, transparent: true, opacity: 0.8}));
-        scene.add(snowMesh);
-
-        // --- 5. INTERACTIE ---
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
+        const texLoader = new THREE.TextureLoader();
 
-        window.addEventListener('click', (e) => {
-            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        const amb = new THREE.AmbientLight(0xffffff, 0.5); scene.add(amb);
+        const sun = new THREE.DirectionalLight(0xffffff, 1); sun.position.set(10,20,10); scene.add(sun);
 
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(interactables);
+        // HUB TREE
+        const treeGroup = new THREE.Group(); scene.add(treeGroup);
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.6,1,3,8), new THREE.MeshStandardMaterial({color:0x4a3728}));
+        trunk.position.y=1.5; treeGroup.add(trunk);
+        const lMat = new THREE.MeshStandardMaterial({color:0x0f5f1f, flatShading:true});
+        const c1=new THREE.Mesh(new THREE.ConeGeometry(3.5,4,16), lMat); c1.position.y=3.5; treeGroup.add(c1);
+        const c2=new THREE.Mesh(new THREE.ConeGeometry(2.5,3,16), lMat); c2.position.y=5.5; treeGroup.add(c2);
+        const c3=new THREE.Mesh(new THREE.ConeGeometry(1.5,2,16), lMat); c3.position.y=7.0; treeGroup.add(c3);
 
-            if(intersects.length > 0) {
-                const obj = intersects[0].object;
-                checkPattern(obj);
-            }
+        const lightsConfig = [
+            { id:'white', c:0xffffff, pos:[0, 2.5, 3.2] }, { id:'red', c:0xff0000, pos:[2.5, 2.8, 1.5] },
+            { id:'blue', c:0x0000ff, pos:[-2.2, 2.8, -2.2] }, { id:'yellow', c:0xffff00, pos:[1.2, 3.0, -2.8] },
+            { id:'cyan', c:0x00ffff, pos:[-2.0, 4.8, 0.6] }, { id:'orange', c:0xffa500, pos:[1.8, 5.0, 0.8] },
+            { id:'green', c:0x32cd32, pos:[0, 5.2, -2.2] }, { id:'purple', c:0x800080, pos:[0.9, 6.5, 0.3] },
+            { id:'pink', c:0xff69b4, pos:[-0.9, 6.5, 0.3] }, { id:'magenta', c:0xff00ff, pos:[0, 7.8, 0] }
+        ];
+        const treeLights = []; let treeIdx = 0;
+        lightsConfig.forEach((cfg,i) => {
+            const m = new THREE.Mesh(new THREE.SphereGeometry(0.3,16,16), new THREE.MeshStandardMaterial({color:cfg.c, emissive:cfg.c, emissiveIntensity:0.5}));
+            m.position.set(...cfg.pos); m.userData={type:'bulb', idx:i}; treeGroup.add(m); treeLights.push(m);
         });
 
-        function checkPattern(mesh) {
-            // Als we al klaar zijn, niets doen
-            if(currentStep >= correctOrderIds.length) return;
+        const portalGroup = new THREE.Group(); scene.add(portalGroup);
+        const portals = [];
+        function mkPortal(pos, id) {
+            const m = new THREE.Mesh(new THREE.OctahedronGeometry(0.8), new THREE.MeshBasicMaterial({color:0xffffff, wireframe:true}));
+            m.position.copy(pos); m.userData={type:'portal', id:id}; portalGroup.add(m); portals.push(m);
+        }
+        mkPortal(new THREE.Vector3(0,3,5), 'r1'); mkPortal(new THREE.Vector3(-5,3,0), 'r2');
+        mkPortal(new THREE.Vector3(5,3,0), 'r3'); mkPortal(new THREE.Vector3(0,6,-3), 'r4');
+        portalGroup.visible = false;
 
-            const clickedId = mesh.userData.id;
-            const targetId = correctOrderIds[currentStep];
+        // PLACEHOLDERS
+        const r1 = new THREE.Group(); r1.position.copy(POS.r1); scene.add(r1);
+        r1.add(new THREE.Mesh(new THREE.BoxGeometry(16,9,1), new THREE.MeshStandardMaterial({color:0x111111})));
+        const r2 = new THREE.Group(); r2.position.copy(POS.r2); scene.add(r2);
+        r2.add(new THREE.Mesh(new THREE.BoxGeometry(10,10,10), new THREE.MeshBasicMaterial({color:0x000, side:THREE.BackSide})));
+        const r4 = new THREE.Group(); r4.position.copy(POS.r4); scene.add(r4);
+        r4.add(new THREE.Mesh(new THREE.IcosahedronGeometry(8,2), new THREE.MeshStandardMaterial({color:0xffffff, wireframe:true})));
 
-            // Animatie
-            pulse(mesh);
+        // ================= ROOM 3: ARCADE (FIXED BUTTONS & SCREEN) =================
+        const r3 = new THREE.Group(); r3.position.copy(POS.r3); scene.add(r3);
+        const cabMat = new THREE.MeshStandardMaterial({color: 0x222222, roughness: 0.4});
+        const cab = new THREE.Mesh(new THREE.BoxGeometry(10, 20, 8), cabMat); r3.add(cab);
+        
+        // --- GENERATE GAME SCREEN ---
+        function createGameScreen() {
+            const c = document.createElement('canvas'); c.width=512; c.height=384;
+            const ctx = c.getContext('2d');
+            ctx.fillStyle='#000022'; ctx.fillRect(0,0,512,384);
+            ctx.fillStyle='white';
+            for(let i=0; i<80; i++) ctx.fillRect(Math.random()*512, Math.random()*384, 2, 2);
+            ctx.font='bold 60px Courier'; ctx.textAlign='center'; 
+            ctx.shadowColor='#00ffff'; ctx.shadowBlur=15; ctx.fillStyle='#ff00ff';
+            ctx.fillText("MEMORY", 256, 140);
+            ctx.fillText("RUN", 256, 210);
+            ctx.shadowBlur=0; ctx.font='24px Courier'; ctx.fillStyle='#00ff00';
+            ctx.fillText("INSERT COIN", 256, 320);
+            return new THREE.CanvasTexture(c);
+        }
+        const scrMat = new THREE.MeshBasicMaterial({map: createGameScreen()});
+        const screen = new THREE.Mesh(new THREE.PlaneGeometry(8, 6), scrMat); 
+        screen.position.set(0, 3, 4.05); r3.add(screen);
+        
+        const marq = new THREE.Mesh(new THREE.BoxGeometry(10, 3, 1), new THREE.MeshBasicMaterial({color: 0xff00ff})); marq.position.set(0, 8.5, 4); r3.add(marq);
+        const cp = new THREE.Mesh(new THREE.BoxGeometry(10, 1, 4), new THREE.MeshStandardMaterial({color: 0x111111})); 
+        cp.position.set(0, -1, 5.5); cp.rotation.x = 0.3; r3.add(cp);
 
-            if(clickedId === targetId) {
-                // --- GOED ---
-                revealClue(currentStep, mesh.userData);
-                
-                // Maak het lichtje fel (blijft aan)
-                mesh.material.emissiveIntensity = 3.0;
+        function createBtnLabel(char, color) {
+            const c = document.createElement('canvas'); c.width=128; c.height=128; const ctx = c.getContext('2d');
+            ctx.fillStyle = color; ctx.fillRect(0,0,128,128); 
+            ctx.fillStyle = 'white'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font = 'bold 80px Arial'; ctx.fillText(char, 64, 64);
+            return new THREE.CanvasTexture(c);
+        }
+        const btns = [];
+        function mkBtn(name, label, color, x, z) {
+            const g = new THREE.CylinderGeometry(0.4, 0.4, 0.5, 32);
+            const mat = [
+                new THREE.MeshStandardMaterial({color: 0x333333}), 
+                new THREE.MeshBasicMaterial({map: createBtnLabel(label, color)}), 
+                new THREE.MeshBasicMaterial({color: 0x000000})
+            ];
+            const btn = new THREE.Mesh(g, mat);
+            btn.position.set(x, 0.6, z); 
+            
+            // FIX: 180 GRADEN DRAAIEN (Math.PI)
+            btn.rotation.y = Math.PI / 2; 
 
-                showFeedback(`Ja! Dat is ${mesh.userData.name}`, false);
-                
-                // Stap verhogen
-                currentStep++;
+            btn.userData = { type: 'arcadeBtn', key: name };
+            cp.add(btn); btns.push(btn);
+        }
 
-                // Highlight volgende regel in UI (als die er is)
-                if(currentStep < correctOrderIds.length) {
-                    document.querySelectorAll('.list-item').forEach(el => el.classList.remove('active'));
-                    document.getElementById(`clue-${currentStep}`).classList.add('active');
+        // D-Pad
+        mkBtn('ArrowUp', '▲', '#222', -2.5, -1.0);
+        mkBtn('ArrowDown', '▼', '#222', -2.5, 1.0);
+        mkBtn('ArrowLeft', '◀', '#222', -3.5, 0);
+        mkBtn('ArrowRight', '▶', '#222', -1.5, 0);
+
+        // Actie
+        mkBtn('b', 'B', '#cc0000', 1.5, 0.0); 
+        mkBtn('a', 'A', '#00cc00', 3.0, 0.0);
+
+        // NOTE
+        function createNote() {
+            const c = document.createElement('canvas'); c.width=256; c.height=256; const ctx = c.getContext('2d');
+            ctx.fillStyle='#ffeb3b'; ctx.fillRect(0,0,256,256); ctx.font='20px Arial'; ctx.fillStyle='black'; ctx.fillText("CHEAT CODE:", 20, 40);
+            ctx.font='bold 30px Arial'; ctx.fillText("U U D D", 40, 90); ctx.fillText("L R L R", 40, 130); ctx.fillText("B A", 60, 170);
+            return new THREE.CanvasTexture(c);
+        }
+        const note = new THREE.Mesh(new THREE.PlaneGeometry(3,3), new THREE.MeshBasicMaterial({map:createNote(), side:THREE.DoubleSide}));
+        note.position.set(5.1, 0, 2); note.rotation.y=Math.PI/2; note.rotation.z=-0.1; r3.add(note);
+
+        // ================= INTERACTION =================
+        window.addEventListener('click', onClick);
+
+        function onClick(e) {
+            if(document.getElementById('newspaper-modal').style.display === 'block' || 
+               document.getElementById('crime-scene').style.display === 'flex' ||
+               document.getElementById('room-ui').style.display === 'flex') return;
+
+            mouse.x = (e.clientX/window.innerWidth)*2-1;
+            mouse.y = -(e.clientY/window.innerHeight)*2+1;
+            raycaster.setFromCamera(mouse, camera);
+
+            if(gameState==='tree') {
+                const hits = raycaster.intersectObjects(treeLights);
+                if(hits.length>0) {
+                    const b = hits[0].object;
+                    // FIX: NEGEER ALS LAMPJE AL AAN IS
+                    if(b.userData.idx < treeIdx) return;
+
+                    if(b.userData.idx === treeIdx) {
+                        b.material.emissiveIntensity=2; treeIdx++;
+                        if(treeIdx>=10) { gameState='hub'; completed.tree=true; portalGroup.visible=true; feedback("STER GEOPEND"); document.getElementById('status').innerText="KIES EEN KAMER"; }
+                    } else { treeIdx=0; treeLights.forEach(l=>l.material.emissiveIntensity=0.5); feedback("RESET"); }
                 }
+            } 
+            else if (gameState==='hub') {
+                const hits = raycaster.intersectObjects(portals);
+                if(hits.length>0) enterRoom(hits[0].object.userData.id);
+            }
+            else if (gameState==='r3') {
+                const hits = raycaster.intersectObjects(btns);
+                if(hits.length > 0) pressArcadeButton(hits[0].object);
+            }
+        }
 
-                // Check Winst
-                if(currentStep === correctOrderIds.length) {
-                    setTimeout(() => {
-                        document.getElementById('popup').style.display = 'block';
-                        fireworks();
-                    }, 500);
-                }
+        let konamiSeq = [];
+        const targetSeq = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
 
+        function pressArcadeButton(btn) {
+            btn.position.y -= 0.1;
+            setTimeout(() => btn.position.y += 0.1, 100);
+            konamiSeq.push(btn.userData.key);
+            const idx = konamiSeq.length - 1;
+            
+            if(konamiSeq[idx] !== targetSeq[idx]) {
+                konamiSeq = []; feedback("FOUT");
+                // Rood knipper scherm
+                screen.material.color.setHex(0xff0000); 
+                setTimeout(()=>screen.material.color.setHex(0xffffff), 300);
             } else {
-                // --- FOUT ---
-                // We kijken of de speler op een lampje klikt dat AL gevonden is
-                // (Checken of index van clickedId < currentStep)
-                const alreadyFound = correctOrderIds.indexOf(clickedId) < currentStep && correctOrderIds.indexOf(clickedId) !== -1;
-                
-                if (alreadyFound) {
-                    showFeedback("Die heb je al gevonden!", true);
-                } else {
-                    showFeedback("Fout! Zoek een ander lampje.", true);
-                    // We resetten currentStep NIET. De voortgang blijft behouden.
+                if(konamiSeq.length === targetSeq.length) {
+                    screen.material.color.setHex(0x00ff00);
+                    feedback("CHEAT ACTIVATED");
+                    completeRoom('r3');
                 }
             }
         }
 
-        function revealClue(index, data) {
-            const el = document.getElementById(`clue-${index}`);
-            // Verander vraagtekens in Naam + Juiste Kleur bolletje
-            el.innerHTML = `<span class="dot" style="background:${data.hex}; border-color:#fff; box-shadow:0 0 5px ${data.hex}"></span> ${index + 1}. ${data.name}`;
-            el.style.fontWeight = "bold";
-            el.style.color = "#fff";
+        function enterRoom(id) {
+            if(completed[id]) return;
+            gameState = id;
+            const dest = POS[id].clone(); dest.z += 15;
+            camera.position.copy(dest); controls.target.copy(POS[id]);
+            document.getElementById('exit-room-btn').style.display = 'block';
+
+            if(id === 'r1') { document.getElementById('room-ui').style.display = 'flex'; showPuz('puz-r1'); initR1(); }
+            else if(id === 'r2') { 
+                document.getElementById('room-ui').style.display = 'none'; 
+                document.getElementById('exit-room-btn').style.display = 'none'; 
+                openNewspaper(); 
+            }
+            else if(id === 'r3') { 
+                document.getElementById('room-ui').style.display = 'none'; 
+                konamiSeq = [];
+                feedback("KLIK DE KNOPPEN OP DE KAST");
+            }
+            else if(id === 'r4') { document.getElementById('room-ui').style.display = 'flex'; showPuz('puz-r4'); initR4(); }
         }
 
-        function pulse(mesh) {
-            const oldColor = mesh.material.color.getHex();
-            mesh.material.color.setHex(0xffffff);
-            setTimeout(() => {
-                mesh.material.color.setHex(oldColor);
-            }, 100);
+        window.exitRoom = function() {
+            gameState = 'hub';
+            camera.position.copy(POS.hub); controls.target.set(0,4,0);
+            document.getElementById('room-ui').style.display = 'none';
+            document.getElementById('exit-room-btn').style.display = 'none';
+            document.getElementById('crime-scene').style.display = 'none';
+            if(window.removeKonami) window.removeKonami();
         }
 
-        function showFeedback(msg, isError) {
-            const el = document.getElementById('feedback');
-            el.innerText = msg;
-            el.style.color = isError ? '#ff6666' : '#66ff66';
-            el.style.opacity = 1;
-            setTimeout(() => { el.style.opacity = 0; }, 2000);
+        function showPuz(id) {
+            document.querySelectorAll('.puzzle-container').forEach(p => p.style.display='none');
+            document.getElementById(id).style.display = 'flex';
         }
 
-        window.resetGame = function() {
-            document.getElementById('popup').style.display = 'none';
-            currentStep = 0;
-            initUI(); // Reset de lijst naar vraagtekens
+        function completeRoom(id) {
+            if(completed[id]) return; // Fix dubbele triggers
+            completed[id] = true;
+            feedback("VOLTOOID");
+            const p = portals.find(m => m.userData.id === id);
+            if(p) { p.material.color.setHex(0x00ff00); p.material.wireframe=false; }
             
-            // Reset alle lampjes naar normaal
-            interactables.forEach(mesh => {
-                mesh.material.emissiveIntensity = 0.6;
-            });
-            
-            showFeedback("Nieuw spel gestart!", false);
-        };
+            // CHECK OF ALLES KLAAR IS
+            if(completed.r1 && completed.r2 && completed.r3 && completed.r4) {
+                setTimeout(()=>{
+                    document.getElementById('room-ui').style.display = 'none';
+                    document.getElementById('finale-screen').style.opacity=1;
+                }, 2000);
+            } else {
+                setTimeout(exitRoom, 1500);
+            }
+        }
 
-        function fireworks() {
-            let count = 0;
-            const interval = setInterval(() => {
-                scene.background = new THREE.Color(Math.random() * 0xffffff);
-                count++;
-                if(count > 12) {
-                    clearInterval(interval);
-                    scene.background = new THREE.Color(0x020205);
+        function feedback(txt) {
+            const e = document.getElementById('center-msg');
+            e.innerText = txt; e.style.opacity = 1;
+            setTimeout(()=>e.style.opacity=0, 2000);
+        }
+
+        function openNewspaper() { document.getElementById('newspaper-modal').style.display = 'block'; }
+        window.closeNewspaper = function() { document.getElementById('newspaper-modal').style.display = 'none'; document.getElementById('crime-scene').style.display = 'flex'; }
+        window.goToInterrogation = function() { document.getElementById('crime-scene').style.display = 'none'; document.getElementById('room-ui').style.display = 'flex'; showPuz('puz-r2-interrogation'); initSuspects(); }
+
+        const suspects = [
+            {n:"Tinsel", j:"Inpakker", l:"Postkamer", c:"Papier cuts"},
+            {n:"Hexley Glasshatter", j:"Monteur", l:"Pijpleiding", c:"Olie & Ijs resten"},
+            {n:"Barnaby", j:"Stalmeester", l:"Stal", c:"Ruikt naar hooi"},
+            {n:"Jingle", j:"Bakker", l:"Keuken", c:"Meel op neus"},
+            {n:"Snowball", j:"Schilder", l:"Atelier", c:"Verf handen"}
+        ];
+        let accusation = null;
+        function initSuspects(){
+            const g = document.getElementById('suspects-grid'); g.innerHTML='';
+            suspects.forEach((s, i) => {
+                const d=document.createElement('div'); d.className='suspect-card';
+                let imgUrl = '';
+                switch(s.n) {
+                    case 'Tinsel': imgUrl = 'Tinsel.jpeg'; break;
+                    case 'Hexley Glasshatter': imgUrl = 'Hexley Glasshatter.jpeg'; break;
+                    case 'Barnaby': imgUrl = 'Barnaby.jpeg'; break;
+                    case 'Jingle': imgUrl = 'Jingle.jpeg'; break;
+                    case 'Snowball': imgUrl = 'Snowball.jpeg'; break;
                 }
-            }, 150);
+                d.innerHTML=`<div class='mugshot' style="background-image:url('${imgUrl}')"></div><div class="suspect-info"><strong>${s.n}</strong><br>${s.j}<br>Loc: ${s.l}<br>Note: ${s.c}</div>`;
+                d.onclick=()=>{ document.querySelectorAll('.suspect-card').forEach(x=>x.classList.remove('selected')); d.classList.add('selected'); accusation=s.n; };
+                g.appendChild(d);
+            });
+        }
+        window.accuseSuspect = function() {
+            if(accusation==="Hexley Glasshatter") {
+                completeRoom('r2');
+            } else { 
+                feedback("FOUT. DIT IS NIET DE DADER.");
+                // Reset selectie
+                document.querySelectorAll('.suspect-card').forEach(x=>x.classList.remove('selected')); 
+                accusation = null;
+            }
         }
 
-        // --- LOOP ---
+        // AANGEPAST: Wachtwoord is nu 'ICFROST2025'
+        window.checkR1Input = function() { 
+            if(document.getElementById('r1-input').value.toUpperCase()==="ICFROST2025"){ 
+                document.getElementById('r1-phase2').style.display='block'; 
+                const b=document.getElementById('r1-buttons'); 
+                b.innerHTML=''; 
+                for(let i=0;i<5;i++){ 
+                    const btn=document.createElement('button'); 
+                    btn.className='glitch-btn'; 
+                    btn.innerText="FIX "+(i+1); 
+                    btn.onclick=function(){this.style.background='#0f0'; this.innerText="OK"; if(document.querySelectorAll('#r1-buttons button')[4].innerText==="OK") completeRoom('r1');}; 
+                    b.appendChild(btn); 
+                } 
+            } else alert("FOUT"); 
+        }
+        function initR1(){ document.getElementById('r1-input').value=""; document.getElementById('r1-phase2').style.display='none'; }
+        
+        function initR3(){ konamiSeq = []; }
+
+        let cL=[];
+        function initR4(){ showStage(1); cL=[]; document.getElementById('c2-in').value=""; document.getElementById('c4-in').value=""; }
+        function showStage(n){ document.querySelectorAll('.core-stage').forEach(s=>s.classList.remove('active')); document.getElementById('core-s'+n).classList.add('active'); }
+        // AANGEPAST VOOR NIEUWE VRAAG R4-1
+        window.checkCore1 = function(n){ if(n===2) showStage(2); else alert("FOUT"); }
+        // AANGEPAST VOOR NIEUWE VRAAG R4-2
+        window.checkCore2 = function(){ if(document.getElementById('c2-in').value.toUpperCase()==="SPECTOGRAM") showStage(3); else alert("FOUT"); }
+        // AANGEPAST VOOR NIEUWE VRAAG R4-3 (LICHT KEUZES)
+        window.checkCore3 = function(n){ 
+            if(n===2) showStage(4); 
+            else alert("FOUT"); 
+        }
+        
+        window.cl = function(c){ cL.push(c); if(cL.length===3){ if(cL[0]==='white'&&cL[1]==='red'&&cL[2]==='blue') showStage(4); else {alert("FOUT"); cL=[];} } }
+        
+        // AANGEPAST VOOR NIEUWE VRAAG R4-4 (KEUZE)
+        window.checkCore4 = function(choice) { 
+            if(choice === 2) { 
+                completeRoom('r4'); 
+            } else { 
+                alert("FOUT"); 
+            } 
+        }
+
         function animate() {
             requestAnimationFrame(animate);
             controls.update();
-
-            const p = snowMesh.geometry.attributes.position.array;
-            for(let i=1; i<p.length; i+=3) {
-                p[i] -= 0.05;
-                if(p[i] < 0) p[i] = 40;
-            }
-            snowMesh.geometry.attributes.position.needsUpdate = true;
-
-            star.rotation.y -= 0.02;
-            treeGroup.rotation.y += 0.001;
-
+            portalGroup.children.forEach(p=>{p.rotation.y+=0.02; p.rotation.x+=0.01;});
             renderer.render(scene, camera);
         }
         animate();
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth/window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
+        window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
 
     </script>
 </body>
